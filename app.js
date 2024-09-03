@@ -1,16 +1,28 @@
-const express = require('express')
-const app = express()
+const express = require('express');
+const app = express();
 const port = 3000
 const cors = require('cors')
-app.use(cors())
+const session = require('express-session');
+var usuario = 
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}))
+//Mantener la sesión iniciada
+app.use(session({
+  secret: 'aojdisabfgaeuepwo',
+  resave: false,
+  saveUninitialized: true
 
+}))
 // Get the client
+
 const mysql = require('mysql2/promise');
 
 // Create the connection to database
 const connection = mysql.createPool({
   host: 'localhost',
-  
+
   user: 'root',
   database: 'mydb',
 });
@@ -30,6 +42,7 @@ app.get('/mydb',async (req, res) => { //req = request = petición; res = respons
     );
 
   if (results.length > 0 ){
+    req.session.usuario = datos.usuario;
     res.status(200).send('Inicio de sesión correcto')
       }else{
         res.status(401).send('Datos incorrectos')
@@ -41,8 +54,12 @@ app.get('/mydb',async (req, res) => { //req = request = petición; res = respons
 
 })
 
-app.get('/validate', (req, res) => {
-  res.send('Sesion validada')
+app.get('/validar', (req, res) => {
+  if (req.session,usuario){
+    res.status(200).send('Sesion validada')
+  }else{
+    res.status(401).send('No autorizado')
+  }
 })
 
 app.listen(port, () => {
