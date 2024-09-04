@@ -3,15 +3,14 @@ const app = express();
 const port = 3000
 const cors = require('cors')
 const session = require('express-session');
-var usuario = 
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true
 }))
 //Mantener la sesión iniciada
 app.use(session({
-  secret: 'aojdisabfgaeuepwo',
-  resave: false,
+  secret: '12345',
+  resave: true,
   saveUninitialized: true
 
 }))
@@ -29,8 +28,10 @@ const connection = mysql.createPool({
 
 /////////////////////////////
 app.get('/', (req, res) => {
+
   res.send('Hello World!')
 })
+
 
 app.get('/mydb',async (req, res) => { //req = request = petición; res = response = respuesta;
   const datos = req.query;
@@ -42,7 +43,7 @@ app.get('/mydb',async (req, res) => { //req = request = petición; res = respons
     );
 
   if (results.length > 0 ){
-    req.session.usuario = datos.usuario;
+    req.session.usuarios = datos.N_id;
     res.status(200).send('Inicio de sesión correcto')
       }else{
         res.status(401).send('Datos incorrectos')
@@ -55,7 +56,7 @@ app.get('/mydb',async (req, res) => { //req = request = petición; res = respons
 })
 
 app.get('/validar', (req, res) => {
-  if (req.session,usuario){
+  if (req.session.usuarios){
     res.status(200).send('Sesion validada')
   }else{
     res.status(401).send('No autorizado')
