@@ -1,67 +1,63 @@
 const express = require('express');
 const app = express();
-const port = 3000
+const port = 3000;
 const cors = require('cors')
 const session = require('express-session');
+const mysql = require('mysql2/promise');
+
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true
 }))
+
 //Mantener la sesión iniciada
 app.use(session({
   secret: '12345',
-  resave: true,
-  saveUninitialized: true
+  cookie:{
+    maxAge:60000
+  },
 
 }))
-// Get the client
-
-const mysql = require('mysql2/promise');
 
 // Create the connection to database
 const connection = mysql.createPool({
   host: 'localhost',
-
   user: 'root',
   database: 'mydb',
 });
 
 /////////////////////////////
-app.get('/', (req, res) => {
 
-  res.send('Hello World!')
-})
-
-
-app.get('/mydb',async (req, res) => { //req = request = petición; res = response = respuesta;
+async function login(req, res) { //req = request = petición; res = response = respuesta;
   const datos = req.query;
-
-  try {
-    const [results, fields] = await connection.query(
-      "SELECT * FROM `Acudiente` WHERE `N_id` = ? AND `PASSWORD` = ?",
-      [datos.N_id,datos.PASSWORD]
-    );
-
-  if (results.length > 0 ){
+  const [filas] = await connection.query("SELECT * FROM `acudiente` WHERE `N_id` = '"+ datos.N_id + "'AND `PASSWORD` = '"+ datos.PASSWORD+"'");
+      
+  if (filas.length == 1 ){
     req.session.usuarios = datos.N_id;
-    res.status(200).send('Inicio de sesión correcto')
+    res.status(200).json({logueado:true})
       }else{
-        res.status(401).send('Datos incorrectos')
+        res.status(401).json({error: 'Datos incorrectos'})
   };
+return;}
 
-  } catch (err) {
-    console.log(err);
-  }
+app.get('/login',login)
 
-})
-
-app.get('/validar', (req, res) => {
+function validar(req,res){
   if (req.session.usuarios){
-    res.status(200).send('Sesion validada')
+    res.status(200).json({logueado: true})
   }else{
-    res.status(401).send('No autorizado')
+    res.status(401).json({error: 'Usuario no logueado'})
+  }return;
+}
+
+app.get('/validar',validar)
+
+app.get('/cerrar', (req, res) => {
+  req.session.destroy()
+  res.status(200).json({logueado: false})
+   return;
   }
-})
+)
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
