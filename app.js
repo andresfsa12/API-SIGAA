@@ -46,6 +46,13 @@ const connection = mysql.createPool({
   database: 'mydb',
 });
 
+const credentials={
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'mydb',
+}
+
 /////////////////////////////
 
 app.post('/registrar-estudiante',(req, res) => { //req = request = petición; res = response = respuesta;
@@ -69,16 +76,20 @@ app.post('/registrar-estudiante',(req, res) => { //req = request = petición; re
    })
  })
 
+
 async function loginAcudiente(req, res) { //req = request = petición; res = response = respuesta;
   const datosAcudiente = req.query;
-  const [filas1] = await connection.query("SELECT * FROM `acudiente` WHERE `N_id` = '"+ datosAcudiente.N_id + "'AND `PASSWORD` = '"+ datosAcudiente.PASSWORD+"'");
-      
+  const [filas1] = await connection.query("SELECT 'Nombre' FROM `acudiente` WHERE `N_id` = '"+ datosAcudiente.N_id + "'AND `PASSWORD` = '"+ datosAcudiente.PASSWORD+"'");
+  
   if (filas1.length == 1 ){
     req.session.usuario = datosAcudiente.N_id;
     res.status(200).json({logueado:true})
+
       }else{
         res.status(401).json({error: 'Datos incorrectos'})
       };
+
+ 
   };
 
 async function loginDocente(req, res) { //req = request = petición; res = response = respuesta;
@@ -103,8 +114,17 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
               res.status(401).json({error: 'Datos incorrectos'})
             };  
     };
+    
+    app.get('/api/acudiente-estudiantes',(req,res)=>{
+      db.query("SELECT * FROM estudiante WHERE Codigo_Acudiente = 3",(err,rows)=>{
+          if (err){
+            res.status(500).send(err)
+          }else{
+            res.status(200).send(rows)
+          }
+      })
+      })
 
-  
 
 
 app.get('/login-Acudiente',loginAcudiente)
@@ -121,10 +141,10 @@ function validar(req,res){
 
 app.get('/validar',validar)
 
-app.get('/cerrar', (req, res) => {
-  req.session.destroy();
-  res.status(200).json({logueado: false});
-  });
+//app.get('/cerrar', (req, res) => {
+  //req.session.destroy();
+  //res.status(200).json({logueado: false});
+  //});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
