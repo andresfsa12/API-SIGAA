@@ -76,6 +76,9 @@ app.post('/registrar-estudiante',(req, res) => { //req = request = petición; re
    })
  })
 
+ async function inicio(req, res) { //req = request = petición; res = response = respuesta;
+ res.status(200).json("Conectado")
+      };
 
 async function loginAcudiente(req, res) { //req = request = petición; res = response = respuesta;
   const datosAcudiente = req.query;
@@ -115,21 +118,50 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
             };  
     };
     
-    app.get('/api/acudiente-estudiantes',(req,res)=>{
-      db.query("SELECT * FROM estudiante WHERE Codigo_Acudiente = 3",(err,rows)=>{
-          if (err){
-            res.status(500).send(err)
-          }else{
-            res.status(200).send(rows)
+     app.get('/api/acudiente-estudiantes',(req,res)=>{
+      db.query("SELECT * FROM `estudiante` WHERE `Codigo_Acudiente` = 3",(err,rows)=>{
+        if (err){
+          res.status(500).send(err)
+        }else{
+          res.status(200).send(rows)
+        }
+      })
+      })
+     
+        /*async function estudiantexacudiente(req, res) {
+          try {
+              const codigo_acudiente = req.query.codigoAcudiente;
+              const [filas4] = await connection.query("SELECT * FROM `estudiante` WHERE `Codigo_Acudiente` = '"+codigo_acudiente+"'");
+                 // Si la consulta fue exitosa, enviamos los resultados
+              
+              res.status(200).send(rows);
+          } catch (error) {
+              // Si ocurre un error, enviamos una respuesta de error con el código 500
+              res.status(500).json({error: 'Datos incorrectos'});
           }
-      })
-      })
+      }*/
+            
+     /* async function codAcudiente(req, res) {
+            const id_Acu = req.query.id_Acudiente;
+            const [cod_Acu] = await connection.query("SELECT * FROM `acudiente` WHERE `N_id` = ?",[id_Acu]);
+            if (cod_Acu.length >= 1 ){
+            console.log(cod_Acu);
+            res.status(200);
+        } else {
+            res.status(401).json({error: 'Datos incorrectos'});
+            
+        }
+    }*/
 
-
-
+app.get('/',inicio)
+/*app.get('/codigo-acudientes',codAcudiente)*/
+/*app.get('/acudiente-estudiantes',estudiantexacudiente)*/
 app.get('/login-Acudiente',loginAcudiente)
 app.get('/login-Docente',loginDocente)
 app.get('/login-Estudiante',loginEstudiante)
+
+
+
 
 function validar(req,res){
   if (req.session.usuario){
