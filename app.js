@@ -119,13 +119,26 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
     };
     
      app.get('/api/acudiente-estudiantes',(req,res)=>{
-      db.query("SELECT * FROM `estudiante` WHERE `Codigo_Acudiente` = 3",(err,rows)=>{
-        if (err){
+      db.query("SELECT * FROM `estudiante` WHERE `Codigo_Acudiente` = 103",(err,rows)=>{
+        if (err){ 
+        
           res.status(500).send(err)
         }else{
           res.status(200).send(rows)
         }
       })
+      })
+
+      app.post('/api/eliminar-estudiante',(req,res)=>{
+        const {Id_Estudiante} = req.body
+        var connection = mysql.createConnection(credentials)
+        db.query('DELETE FROM estudiante where Id_Estudiante = ?',Id_Estudiante,(err,result) =>{
+          if (err){
+            res.status(500).send(err)
+          }else{
+            res.status(200).send({"status":"success","message":"Usuario Eliminado"})
+          }
+        })
       })
      
         /*async function estudiantexacudiente(req, res) {
@@ -153,12 +166,15 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
         }
     }*/
 
+
+
 app.get('/',inicio)
 /*app.get('/codigo-acudientes',codAcudiente)*/
 /*app.get('/acudiente-estudiantes',estudiantexacudiente)*/
 app.get('/login-Acudiente',loginAcudiente)
 app.get('/login-Docente',loginDocente)
 app.get('/login-Estudiante',loginEstudiante)
+
 
 
 
