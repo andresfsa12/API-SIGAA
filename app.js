@@ -119,7 +119,7 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
     };
     
      app.get('/api/acudiente-estudiantes',(req,res)=>{
-      db.query("SELECT * FROM `estudiante` WHERE `Codigo_Acudiente` = 103",(err,rows)=>{
+      db.query("SELECT * FROM `estudiante` WHERE `Codigo_Acudiente` = 205",(err,rows)=>{
         if (err){ 
         
           res.status(500).send(err)
@@ -140,6 +140,23 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
           }
         })
       })
+
+      app.put('/api/actualizar-estudiante/:Codigo', (req, res) => {
+        const Codigo = req.params.Codigo;
+        const estudianteActualizado = req.body;
+      
+        const { Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado, Codigo_Acudiente } = estudianteActualizado;
+      
+        const sql = `UPDATE estudiante SET Tipo_Id = ?, Id_Estudiante = ?, Nombre = ?, Apellido = ?, fecha_nacimiento = ?, Genero = ?, Direccion = ?, Clave = ?, Codigo_Grado = ?, Codigo_Acudiente = ? WHERE Codigo = ?`;
+        connection.query(sql, [Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado, Codigo_Acudiente, Codigo], (error, result) => {
+          if (error) {
+            console.error('Error al actualizar el estudiante:', error);
+            return res.status(500).json({ message: 'Error al actualizar el estudiante' });
+          }
+          res.json({ message: 'Estudiante actualizado correctamente' });
+        });
+      });
+        
      
         /*async function estudiantexacudiente(req, res) {
           try {
