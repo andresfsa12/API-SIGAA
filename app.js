@@ -118,16 +118,20 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
             };  
     };
     
-     app.get('/api/acudiente-estudiantes',(req,res)=>{
-      db.query("SELECT * FROM `estudiante` WHERE `Codigo_Acudiente` = 205",(err,rows)=>{
+   
+    // Ruta para obtener los estudiantes de un acudiente
+    app.get('/api/acudiente-estudiante', (req, res) => {
+      const {cod_Acudiente} = req.query;
+      const query = `SELECT * FROM estudiante WHERE Id_Acudiente = ?`;
+      const estudantesList = db.query(query, [cod_Acudiente], (err, rows) => {
         if (err){ 
         
           res.status(500).send(err)
         }else{
           res.status(200).send(rows)
         }
-      })
-      })
+      });
+    });
 
       app.post('/api/eliminar-estudiante',(req,res)=>{
         const {Id_Estudiante} = req.body
@@ -145,10 +149,10 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
         const Codigo = req.params.Codigo;
         const estudianteActualizado = req.body;
       
-        const { Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado, Codigo_Acudiente } = estudianteActualizado;
+        const { Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado } = estudianteActualizado;
       
-        const sql = `UPDATE estudiante SET Tipo_Id = ?, Id_Estudiante = ?, Nombre = ?, Apellido = ?, fecha_nacimiento = ?, Genero = ?, Direccion = ?, Clave = ?, Codigo_Grado = ?, Codigo_Acudiente = ? WHERE Codigo = ?`;
-        connection.query(sql, [Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado, Codigo_Acudiente, Codigo], (error, result) => {
+        const sql = `UPDATE estudiante SET Tipo_Id = ?, Id_Estudiante = ?, Nombre = ?, Apellido = ?, fecha_nacimiento = ?, Genero = ?, Direccion = ?, Clave = ?, Codigo_Grado = ? WHERE Codigo = ?`;
+        connection.query(sql, [Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado, Codigo], (error, result) => {
           if (error) {
             console.error('Error al actualizar el estudiante:', error);
             return res.status(500).json({ message: 'Error al actualizar el estudiante' });
@@ -157,6 +161,17 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
         });
       });
         
+      //NOTAS
+
+      app.get('/api/notas',(req,res)=> {
+        db.query("SELECT * FROM `notas` WHERE `Codigo_Estudiante` = 3",(err,rows)=>{
+          if(err){
+            res.status(500).send(err)
+          }else{
+            res.status(200).send(rows)
+          }
+        })
+      })
      
         /*async function estudiantexacudiente(req, res) {
           try {
@@ -171,22 +186,24 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
           }
       }*/
             
-     /* async function codAcudiente(req, res) {
-            const id_Acu = req.query.id_Acudiente;
-            const [cod_Acu] = await connection.query("SELECT * FROM `acudiente` WHERE `N_id` = ?",[id_Acu]);
-            if (cod_Acu.length >= 1 ){
-            console.log(cod_Acu);
-            res.status(200);
-        } else {
-            res.status(401).json({error: 'Datos incorrectos'});
-            
-        }
-    }*/
+          app.get('/codigo-acudientes/:id', (req, res) => {
+            const id_Acudiente = req.params.id;
+          
+            const sql = 'SELECT * FROM acudiente WHERE N_id = ?';
+          
+            db.query(sql, [id_Acudiente], (err, results) => {
+              if (err) {
+                console.error('Error al ejecutar la consulta:', err);
+                res.status(500).json({ error: 'Error al obtener el acudiente' });
+                return;
+              }
+              res.json(results);
+            });
+          });
 
 
 
 app.get('/',inicio)
-/*app.get('/codigo-acudientes',codAcudiente)*/
 /*app.get('/acudiente-estudiantes',estudiantexacudiente)*/
 app.get('/login-Acudiente',loginAcudiente)
 app.get('/login-Docente',loginDocente)
