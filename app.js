@@ -140,7 +140,7 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
           if (err){
             res.status(500).send(err)
           }else{
-            res.status(200).send({"status":"success","message":"Usuario Eliminado"})
+            res.status(200).send({"status":"success","message":"Usuario Eliminado correctamente"})
           }
         })
       })
@@ -153,9 +153,11 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
       
         const sql = `UPDATE estudiante SET Tipo_Id = ?, Id_Estudiante = ?, Nombre = ?, Apellido = ?, fecha_nacimiento = ?, Genero = ?, Direccion = ?, Clave = ?, Codigo_Grado = ? WHERE Codigo = ?`;
         connection.query(sql, [Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado, Codigo], (error, result) => {
-          if (error) {
+          if (err) {
             console.error('Error al actualizar el estudiante:', error);
             return res.status(500).json({ message: 'Error al actualizar el estudiante' });
+          }else{
+            res.status(200).send({"status":"success","message":"Usuario Actualizado correctamente"})
           }
           res.json({ message: 'Estudiante actualizado correctamente' });
         });
@@ -164,7 +166,38 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
       //NOTAS
 
       app.get('/api/notas',(req,res)=> {
-        db.query("SELECT * FROM `notas` WHERE `Codigo_Estudiante` = 3",(err,rows)=>{
+        const {cod_Acudiente} = req.query;
+        const query = `SELECT * FROM notas JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo JOIN acudiente ON acudiente.N_id = estudiante.Id_Acudiente WHERE estudiante.Id_Acudiente = ?`;
+          const notasList = db.query(query, [cod_Acudiente], (err,rows)=>{
+          if(err){
+            res.status(500).send(err)
+          }else{
+            res.status(200).send(rows)
+          }
+        })
+      })
+
+      //notas para perfil de ESTUDIANTE
+
+      app.get('/api/notas-estudiante',(req,res)=> {
+        const {cod_Estudiante} = req.query;
+        const query = `SELECT * FROM notas JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo WHERE estudiante.Id_Estudiante = ?`;
+          const notasList = db.query(query, [cod_Estudiante], (err,rows)=>{
+          if(err){
+            res.status(500).send(err)
+          }else{
+            res.status(200).send(rows)
+          }
+        })
+      })
+
+      // ASISTENCIA
+
+      //Asistencia Perfil Estudiantes
+      app.get('/api/asistencia-estudiante',(req,res)=> {
+        const {cod_Estudiante} = req.query;
+        const query = `SELECT * FROM asistencia JOIN estudiante ON asistencia.Codigo_Estudiante = estudiante.Codigo JOIN periodos ON asistencia.Periodo = periodos.Codigo WHERE estudiante.Id_Estudiante = ?`;
+          const asistenciaList = db.query(query, [cod_Estudiante], (err,rows)=>{
           if(err){
             res.status(500).send(err)
           }else{
@@ -173,18 +206,7 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
         })
       })
      
-        /*async function estudiantexacudiente(req, res) {
-          try {
-              const codigo_acudiente = req.query.codigoAcudiente;
-              const [filas4] = await connection.query("SELECT * FROM `estudiante` WHERE `Codigo_Acudiente` = '"+codigo_acudiente+"'");
-                 // Si la consulta fue exitosa, enviamos los resultados
-              
-              res.status(200).send(rows);
-          } catch (error) {
-              // Si ocurre un error, enviamos una respuesta de error con el código 500
-              res.status(500).json({error: 'Datos incorrectos'});
-          }
-      }*/
+
             
           app.get('/codigo-acudientes/:id', (req, res) => {
             const id_Acudiente = req.params.id;
