@@ -145,6 +145,8 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
         })
       })
 
+      
+
       app.put('/api/actualizar-estudiante/:Codigo', (req, res) => {
         const Codigo = req.params.Codigo;
         const estudianteActualizado = req.body;
@@ -165,6 +167,7 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
         
       //NOTAS
 
+      //Interfaz Estudiante
       app.get('/api/notas',(req,res)=> {
         const {cod_Acudiente} = req.query;
         const query = `SELECT * FROM notas JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo JOIN acudiente ON acudiente.N_id = estudiante.Id_Acudiente WHERE estudiante.Id_Acudiente = ?`;
@@ -176,6 +179,53 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
           }
         })
       })
+
+      //Interfaz Docente
+      app.get('/api/notas-docente',(req,res)=> {
+        const {id_docente} = req.query;
+        const query = `SELECT * FROM notas JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo JOIN docente ON notas.Codigo_Docente = docente.Codigo_Docente WHERE docente.Id_Docente = ?`;
+          const notasList = db.query(query, [id_docente], (err,rows)=>{
+          if(err){
+            res.status(500).send(err)
+          }else{
+            res.status(200).send(rows)
+          }
+        })
+      })
+      
+      // Insertar-Editar y Eliminar NOTAS perfil docente
+   
+      app.post('/api/eliminar-nota',(req,res)=>{
+        const {Codigo_Notas} = req.body
+        var connection = mysql.createConnection(credentials)
+        db.query('DELETE FROM notas WHERE Codigo_Notas = ?',Codigo_Notas,(err,result) =>{
+          if (err){
+            res.status(500).send(err)
+          }else{
+            res.status(200).send({"status":"success","message":"Nota Eliminada correctamente"})
+          }
+        })
+      })
+      app.put('/api/actualizar-notas/:Codigo_Notas', (req, res) => {
+        const Codigo_Notas = req.params.Codigo_Notas;
+        const updatedNota = req.body;
+      
+        const { Materia, nota } = updatedNota;
+      
+        const sql = `UPDATE notas SET Materia = ?, nota = ? WHERE Codigo_Notas = ?`;
+        connection.query(sql, [Materia, nota, Codigo_Notas], (err, result) => {
+          if (err) {
+            console.error('Error al actualizar la nota:', err);
+            res.status(500).json({ error: 'Error al procesar la solicitud' });
+            return;
+          }
+      
+          res.json({ message: 'Nota actualizada correctamente' });
+        });
+      });
+        //////
+
+              
 
       //notas para perfil de ESTUDIANTE
 
@@ -196,7 +246,7 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
       //Asistencia Perfil Estudiantes
       app.get('/api/asistencia-estudiante',(req,res)=> {
         const {cod_Estudiante} = req.query;
-        const query = `SELECT * FROM asistencia JOIN estudiante ON asistencia.Codigo_Estudiante = estudiante.Codigo JOIN periodos ON asistencia.Periodo = periodos.Codigo WHERE estudiante.Id_Estudiante = ?`;
+        const query = `SELECT * FROM asistencia JOIN estudiante ON asistencia.Codigo_Estudiante = estudiante.Codigo JOIN periodos ON asistencia.Periodo = periodos.Codigo JOIN docente ON docente.Codigo_Docente = asistencia.Codigo_Docente WHERE estudiante.Id_Estudiante = ?`;
           const asistenciaList = db.query(query, [cod_Estudiante], (err,rows)=>{
           if(err){
             res.status(500).send(err)
@@ -207,7 +257,22 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
       })
      
 
-            
+      // ASISTENCIA
+
+      //Asistencia Perfil Estudiantes      
+      app.get('/api/horario-estudiante',(req,res)=> {
+        const {cod_Estudiante} = req.query;
+        const query = `SELECT * FROM horarioestudiante JOIN estudiante ON horarioestudiante.Codigo_Estudiante = estudiante.Codigo JOIN docente ON docente.Codigo_Docente = horarioestudiante.Codigo_Docente WHERE estudiante.Id_Estudiante = ?`;
+          const horarioList = db.query(query, [cod_Estudiante], (err,rows)=>{
+          if(err){
+            res.status(500).send(err)
+          }else{
+            res.status(200).send(rows)
+          }
+        })
+      })
+
+
           app.get('/codigo-acudientes/:id', (req, res) => {
             const id_Acudiente = req.params.id;
           
