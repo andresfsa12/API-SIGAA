@@ -55,6 +55,11 @@ const credentials={
 
 /////////////////////////////
 
+async function inicio(req, res) { //req = request = petición; res = response = respuesta;
+ res.status(200).json("Conectado")
+      };
+
+
 app.post('/registrar-estudiante',(req, res) => { //req = request = petición; res = response = respuesta;
   const sql = "INSERT INTO estudiante (`Tipo_Id`, `Id_Estudiante`, `Nombre`, `Apellido`, `fecha_nacimiento`, `Genero`, `Direccion`, `Clave`, `Codigo_Grado`, `Codigo_Acudiente`) Values (?)";
   const values = [
@@ -76,10 +81,7 @@ app.post('/registrar-estudiante',(req, res) => { //req = request = petición; re
    })
  })
 
- async function inicio(req, res) { //req = request = petición; res = response = respuesta;
- res.status(200).json("Conectado")
-      };
-
+ 
 async function loginAcudiente(req, res) { //req = request = petición; res = response = respuesta;
   const datosAcudiente = req.query;
   const [filas1] = await connection.query("SELECT 'Nombre' FROM `acudiente` WHERE `N_id` = '"+ datosAcudiente.N_id + "'AND `PASSWORD` = '"+ datosAcudiente.PASSWORD+"'");
@@ -183,7 +185,7 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
       //Interfaz Docente
       app.get('/api/notas-docente',(req,res)=> {
         const {id_docente} = req.query;
-        const query = `SELECT * FROM notas JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo JOIN docente ON notas.Codigo_Docente = docente.Codigo_Docente WHERE docente.Id_Docente = ?`;
+        const query = `SELECT * FROM notas JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo JOIN docente ON notas.Codigo_Docente = docente.Id_Docente WHERE docente.Id_Docente = ?`;
           const notasList = db.query(query, [id_docente], (err,rows)=>{
           if(err){
             res.status(500).send(err)
@@ -223,7 +225,39 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
           res.json({ message: 'Nota actualizada correctamente' });
         });
       });
-        //////
+      
+      //AGREGAR NOTA
+      // Ruta para agregar una nueva nota
+        app.post('/api/agregar-notas', async (req, res) => {
+          try {
+            const { Codigo_Estudiante, Materia, Codigo_Periodos, nota, Codigo_Docente } = req.body;
+
+            // Validación básica de los datos 
+            if (!Codigo_Estudiante || !Materia || !Codigo_Periodos || !nota || !Codigo_Docente) {
+              return res.status(400).json({ message: 'Por favor, completa todos los campos.' });
+            }
+
+            // Conexión a la base de datos
+            const connection = await mysql.createConnection(credentials);
+
+            // Consulta SQL para insertar la nota
+            const query = `INSERT INTO notas (Codigo_Estudiante, Materia, Codigo_Periodos, nota, Codigo_Docente) VALUES (?, ?, ?, ?, ?)`;
+            const values = [Codigo_Estudiante, Materia, Codigo_Periodos, nota, Codigo_Docente];
+
+            // Ejecutar la consulta
+            await connection.execute(query, values);
+
+            // Cerrar la conexión
+            connection.end();
+
+            res.status(201).json({ message: 'Nota agregada correctamente' });
+          } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: 'Error al agregar la nota' });
+          }
+        });
+
+      //////
 
               
 
@@ -246,7 +280,7 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
       //Asistencia Perfil Estudiantes
       app.get('/api/asistencia-estudiante',(req,res)=> {
         const {cod_Estudiante} = req.query;
-        const query = `SELECT * FROM asistencia JOIN estudiante ON asistencia.Codigo_Estudiante = estudiante.Codigo JOIN periodos ON asistencia.Periodo = periodos.Codigo JOIN docente ON docente.Codigo_Docente = asistencia.Codigo_Docente WHERE estudiante.Id_Estudiante = ?`;
+        const query = `SELECT * FROM asistencia JOIN estudiante ON asistencia.Codigo_Estudiante = estudiante.Codigo JOIN periodos ON asistencia.Periodo = periodos.Codigo JOIN docente ON docente.Id_Docente = asistencia.Codigo_Docente WHERE estudiante.Id_Estudiante = ?`;
           const asistenciaList = db.query(query, [cod_Estudiante], (err,rows)=>{
           if(err){
             res.status(500).send(err)
@@ -262,7 +296,7 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
       //Asistencia Perfil Estudiantes      
       app.get('/api/horario-estudiante',(req,res)=> {
         const {cod_Estudiante} = req.query;
-        const query = `SELECT * FROM horarioestudiante JOIN estudiante ON horarioestudiante.Codigo_Estudiante = estudiante.Codigo JOIN docente ON docente.Codigo_Docente = horarioestudiante.Codigo_Docente WHERE estudiante.Id_Estudiante = ?`;
+        const query = `SELECT * FROM horarioestudiante JOIN estudiante ON horarioestudiante.Codigo_Estudiante = estudiante.Codigo JOIN docente ON docente.Id_Docente = horarioestudiante.Codigo_Docente WHERE estudiante.Id_Estudiante = ?`;
           const horarioList = db.query(query, [cod_Estudiante], (err,rows)=>{
           if(err){
             res.status(500).send(err)
