@@ -130,9 +130,250 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
             };  
     };
     
-//ACUDIENTE
+    async function loginAdministrativo(req, res) { //req = request = petición; res = response = respuesta;
+      const datosAdministrativo = req.query;
+      const [filas3] = await connection.query("SELECT * FROM `administrativo` WHERE `Id_Admin` = '"+ datosAdministrativo.Id_Admin + "'AND `Clave` = '"+ datosAdministrativo.Clave+"'");
+         
+      if (filas3.length == 1 ){
+          req.session.usuario = datosAdministrativo.Id_Admin;
+          req.session.rol = 'administrativo';
+          res.status(200).json({logueado:true})
+              }else{
+                res.status(401).json({error: 'Datos incorrectos'})
+              };  
+      };
 
-    //Consultar los estudiantes por acudiente
+// ADMINISTRATIVO
+
+// Ruta para obtener los estudiantes
+app.get('/api/administrar-estudiante', (req, res) => {
+  const query = `SELECT * FROM estudiante`;
+  const studentList = db.query(query, (err, rows) => {
+    if (err){ 
+    
+      res.status(500).send(err)
+    }else{
+      res.status(200).send(rows)
+    }
+  });
+});
+
+
+//Insertar nuevo estudiante
+app.post('/api/agregar-estudiante', async (req, res) => {
+  try {
+    const { 
+      Tipo_Id,
+      Id_Estudiante,
+      Nombre,
+      Apellido,
+      fecha_nacimiento,
+      Genero,
+      Direccion,
+      Clave,
+      Codigo_Grado,
+      Id_Acudiente } = req.body;
+
+    // Validación básica de los datos 
+    if (!Tipo_Id || !Id_Estudiante || !Nombre || !Apellido || !fecha_nacimiento || !Genero || !Direccion || !Clave || !Codigo_Grado || !Id_Acudiente) {
+      return res.status(400).json({ message: 'Por favor, completa todos los campos.' });
+    }
+
+    // Conexión a la base de datos
+    const connection = await mysql.createConnection(credentials);
+
+    // Consulta SQL para insertar el ESTUDIANTE
+    const query = `INSERT INTO estudiante (Tipo_Id,
+      Id_Estudiante,
+      Nombre,
+      Apellido,
+      fecha_nacimiento,
+      Genero,
+      Direccion,
+      Clave,
+      Codigo_Grado,
+      Id_Acudiente) VALUES (?, ?, ?, ?, ?,?,?,?,?,?)`;
+    
+      const values = [Tipo_Id,
+      Id_Estudiante,
+      Nombre,
+      Apellido,
+      fecha_nacimiento,
+      Genero,
+      Direccion,
+      Clave,
+      Codigo_Grado,
+      Id_Acudiente];
+
+    // Ejecutar la consulta
+    await connection.execute(query, values);
+
+    // Cerrar la conexión
+    connection.end();
+
+    res.status(201).json({ message: 'Estudiante agregado correctamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al agregar el estudiante' });
+  }
+});
+
+/*app.post('/registrar-estudiante',(req, res) => { //req = request = petición; res = response = respuesta;
+  const sql = "INSERT INTO estudiante (`Tipo_Id`, `Id_Estudiante`, `Nombre`, `Apellido`, `fecha_nacimiento`, `Genero`, `Direccion`, `Clave`, `Codigo_Grado`, `Id_Acudiente`) Values (?)";
+  const values = [
+  req.body.Tipo_Id,
+  req.body.Id_Estudiante,
+  req.body.Nombre,
+  req.body.Apellido,
+  req.body.fecha_nacimiento,
+  req.body.Genero,
+  req.body.Direccion,
+  req.body.Clave,
+  req.body.Codigo_Grado,
+  req.body.Id_Acudiente
+  ]
+  connection.query(sql,[values],(err,data) => {
+  if (err) {
+      console.error("Error en el registro:", err);
+      return res.status(500).json({ error: "Error en el registro" });
+  }
+  return res.status(200).json({ message: "Registro exitoso", data: data });
+  }); 
+})*/
+
+
+  //Eliminar estudiante
+  app.post('/api/eliminar-estudiante',(req,res)=>{
+    const {Id_Estudiante} = req.body
+    var connection = mysql.createConnection(credentials)
+    db.query('DELETE FROM estudiante where Id_Estudiante = ?',Id_Estudiante,(err,result) =>{
+      if (err){
+        res.status(500).send(err)
+      }else{
+        res.status(200).send({"status":"success","message":"Usuario Eliminado correctamente"})
+      }
+    })
+  })
+
+  //Actualizar estudiante
+  app.put('/api/actualizar-estudiante/:Codigo', (req, res) => {
+    const Codigo = req.params.Codigo;
+    const estudianteActualizado = req.body;
+  
+    const { Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado } = estudianteActualizado;
+  
+    const sql = `UPDATE estudiante SET Tipo_Id = ?, Id_Estudiante = ?, Nombre = ?, Apellido = ?, fecha_nacimiento = ?, Genero = ?, Direccion = ?, Clave = ?, Codigo_Grado = ? WHERE Codigo = ?`;
+    connection.query(sql, [Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado, Codigo], (error, result) => {
+      if (err) {
+        console.error('Error al actualizar el estudiante:', error);
+        return res.status(500).json({ message: 'Error al actualizar el estudiante' });
+      }else{
+        res.status(200).send({"status":"success","message":"Usuario Actualizado correctamente"})
+      }
+      res.json({ message: 'Estudiante actualizado correctamente' });
+    });
+  });
+
+  //Administrar DOCENTE
+
+  // Ruta para obtener los DOCENTES
+app.get('/api/administrar-docente', (req, res) => {
+  const query = `SELECT * FROM docente`;
+  const docenteList = db.query(query, (err, rows) => {
+    if (err){ 
+    
+      res.status(500).send(err)
+    }else{
+      res.status(200).send(rows)
+    }
+  });
+});
+
+  //Insertar nuevo DOCENTE
+app.post('/api/agregar-docente', async (req, res) => {
+  try {
+    const { 
+      Id_Docente, Nombre_Docente, fecha_nacimiento, Genero, Nivel_Academico, Direccion, Ciudad, Celular, Clave } = req.body;
+
+    // Validación básica de los datos 
+    if (!Id_Docente ||!Nombre_Docente || !fecha_nacimiento || !Genero || !Nivel_Academico || !Direccion || !Ciudad || !Celular || !Clave) {
+      return res.status(400).json({ message: 'Por favor, completa todos los campos.' });
+    }
+
+    // Conexión a la base de datos
+    const connection = await mysql.createConnection(credentials);
+
+    // Consulta SQL para insertar la nota
+    const query = `INSERT INTO docente (Id_Docente, Nombre_Docente, fecha_nacimiento, Genero, Nivel_Academico, Direccion, Ciudad, Celular, Clave) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    
+      const values = [Id_Docente, Nombre_Docente, fecha_nacimiento, Genero, Nivel_Academico, Direccion, Ciudad, Celular, Clave];
+
+    // Ejecutar la consulta
+    await connection.execute(query, values);
+
+    // Cerrar la conexióne
+    connection.end();
+
+    res.status(201).json({ message: 'Docente agregado correctamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al agregar el docente' });
+  }
+});
+
+//Actualizar DOCENTE
+  app.put('/api/actualizar-docente/:Id_Docente', (req, res) => {
+    const Id_Docente = req.params.Id_Docente;
+    const docenteActualizado = req.body;
+  
+    const {Nombre_Docente, fecha_nacimiento, Genero, Nivel_Academico, Direccion, Ciudad, Celular, Clave} = docenteActualizado;
+  
+    const sql = `UPDATE docente SET Nombre_Docente = ?, fecha_nacimiento = ?, Genero = ?, Nivel_Academico = ?, Direccion = ?, Ciudad = ?, Celular = ?, Clave = ? WHERE Id_Docente = ?`;
+    connection.query(sql, [Nombre_Docente, fecha_nacimiento, Genero, Nivel_Academico, Direccion, Ciudad, Celular, Clave, Id_Docente], (error, result) => {
+      if (err) {
+        console.error('Error al actualizar el docente:', error);
+        return res.status(500).json({ message: 'Error al actualizar el docente' });
+      }else{
+        res.status(200).send({"status":"success","message":"Docente Actualizado correctamente"})
+      }
+      res.json({ message: 'Docente actualizado correctamente' });
+    });
+  });
+
+  //Eliminar DOCENTE
+  app.post('/api/eliminar-docente',(req,res)=>{
+    const {Id_Docente} = req.body
+    var connection = mysql.createConnection(credentials)
+    db.query('DELETE FROM docente where Id_Docente = ?',Id_Docente,(err,result) =>{
+      if (err){
+        res.status(500).send(err)
+      }else{
+        res.status(200).send({"status":"success","message":"Docente Eliminado correctamente"})
+      }
+    })
+  })
+
+
+//ESTUDIANTES
+
+// Ruta para obtener los estudiantes
+app.get('/api/administrar-estudiante', (req, res) => {
+  const query = `SELECT * FROM estudiante`;
+  const estudantesList = db.query(query, (err, rows) => {
+    if (err){ 
+    
+      res.status(500).send(err)
+    }else{
+      res.status(200).send(rows)
+    }
+  });
+});
+
+
+
+// ACUDIENTE
+
+    //Consultar los acudientes
     app.get('/codigo-acudientes/:id', (req, res) => {
       const id_Acudiente = req.params.id;
     
@@ -148,28 +389,7 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
       });
     });
 
-    //Insertar nuevo estudiante
-    app.post('/registrar-estudiante',(req, res) => { //req = request = petición; res = response = respuesta;
-      const sql = "INSERT INTO estudiante (`Tipo_Id`, `Id_Estudiante`, `Nombre`, `Apellido`, `fecha_nacimiento`, `Genero`, `Direccion`, `Clave`, `Codigo_Grado`, `Codigo_Acudiente`) Values (?)";
-      const values = [
-      req.body.Tipo_Id,
-      req.body.Id_Estudiante,
-      req.body.Nombre,
-      req.body.Apellido,
-      req.body.fecha_nacimiento,
-      req.body.Genero,
-      req.body.Direccion,
-      req.body.Clave,
-      req.body.Codigo_Grado,
-      req.body.Codigo_Acudiente
-      ]
-      connection.query(sql,[values],(err,data) => {
-        if(err) return res.json(err);
-        alert("Error en el registro");
-        return res.json(data);
-      })
-    })
-
+    
     // Ruta para obtener los estudiantes de un acudiente
     app.get('/api/acudiente-estudiante', (req, res) => {
       const {cod_Acudiente} = req.query;
@@ -184,45 +404,13 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
       });
     });
 
-      //Eliminar estudiante
-      app.post('/api/eliminar-estudiante',(req,res)=>{
-        const {Id_Estudiante} = req.body
-        var connection = mysql.createConnection(credentials)
-        db.query('DELETE FROM estudiante where Id_Estudiante = ?',Id_Estudiante,(err,result) =>{
-          if (err){
-            res.status(500).send(err)
-          }else{
-            res.status(200).send({"status":"success","message":"Usuario Eliminado correctamente"})
-          }
-        })
-      })
-
-      //Actualizar estudiante
-      app.put('/api/actualizar-estudiante/:Codigo', (req, res) => {
-        const Codigo = req.params.Codigo;
-        const estudianteActualizado = req.body;
-      
-        const { Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado } = estudianteActualizado;
-      
-        const sql = `UPDATE estudiante SET Tipo_Id = ?, Id_Estudiante = ?, Nombre = ?, Apellido = ?, fecha_nacimiento = ?, Genero = ?, Direccion = ?, Clave = ?, Codigo_Grado = ? WHERE Codigo = ?`;
-        connection.query(sql, [Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado, Codigo], (error, result) => {
-          if (err) {
-            console.error('Error al actualizar el estudiante:', error);
-            return res.status(500).json({ message: 'Error al actualizar el estudiante' });
-          }else{
-            res.status(200).send({"status":"success","message":"Usuario Actualizado correctamente"})
-          }
-          res.json({ message: 'Estudiante actualizado correctamente' });
-        });
-      });
-
-      //Notas
+      //Consultar Notas
       app.get('/api/notas',(req,res)=> {
         const {cod_Acudiente} = req.query;
         const query = `SELECT * FROM notas JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo JOIN acudiente ON acudiente.N_id = estudiante.Id_Acudiente WHERE estudiante.Id_Acudiente = ?`;
           const notasList = db.query(query, [cod_Acudiente], (err,rows)=>{
           if(err){
-            res.status(500).send(err)
+            res.status(500).send(err) 
           }else{
             res.status(200).send(rows)
           }
@@ -272,7 +460,7 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
 
 //DOCENTE
 
-      //Notas
+      //Consultar Notas
       app.get('/api/notas-docente',(req,res)=> {
         const {id_docente} = req.query;
         const query = `SELECT * FROM notas JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo JOIN docente ON notas.Codigo_Docente = docente.Id_Docente WHERE docente.Id_Docente = ?`;
@@ -320,10 +508,10 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
       // Agregar una nueva nota
         app.post('/api/agregar-notas', async (req, res) => {
           try {
-            const { Codigo_Estudiante, Materia, Codigo_Periodos, nota, Codigo_Docente } = req.body;
+            const { Codigo_Estudiante, Materia, Codigo_Periodos, nota, Grado, Codigo_Docente } = req.body;
 
             // Validación básica de los datos 
-            if (!Codigo_Estudiante || !Materia || !Codigo_Periodos || !nota || !Codigo_Docente) {
+            if (!Codigo_Estudiante || !Materia || !Codigo_Periodos || !nota || !Grado || !Codigo_Docente) {
               return res.status(400).json({ message: 'Por favor, completa todos los campos.' });
             }
 
@@ -332,7 +520,7 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
 
             // Consulta SQL para insertar la nota
             const query = `INSERT INTO notas (Codigo_Estudiante, Materia, Codigo_Periodos, nota, Codigo_Docente) VALUES (?, ?, ?, ?, ?)`;
-            const values = [Codigo_Estudiante, Materia, Codigo_Periodos, nota, Codigo_Docente];
+            const values = [Codigo_Estudiante, Materia, Codigo_Periodos, nota, Grado, Codigo_Docente];
 
             // Ejecutar la consulta
             await connection.execute(query, values);
@@ -366,6 +554,7 @@ app.get('/',inicio)
 app.get('/login-Acudiente',loginAcudiente)
 app.get('/login-Docente',loginDocente)
 app.get('/login-Estudiante',loginEstudiante)
+app.get('/login-Administrativo',loginAdministrativo)
 
 
 
