@@ -311,7 +311,7 @@ app.post('/api/agregar-docente', async (req, res) => {
     // Ejecutar la consulta
     await connection.execute(query, values);
 
-    // Cerrar la conexióne
+    // Cerrar la conexión
     connection.end();
 
     res.status(201).json({ message: 'Docente agregado correctamente' });
@@ -344,7 +344,7 @@ app.post('/api/agregar-docente', async (req, res) => {
   app.post('/api/eliminar-docente',(req,res)=>{
     const {Id_Docente} = req.body
     var connection = mysql.createConnection(credentials)
-    db.query('DELETE FROM docente where Id_Docente = ?',Id_Docente,(err,result) =>{
+    db.query('DELETE FROM docente WHERE Id_Docente = ?',Id_Docente,(err,result) =>{
       if (err){
         res.status(500).send(err)
       }else{
@@ -353,23 +353,82 @@ app.post('/api/agregar-docente', async (req, res) => {
     })
   })
 
+  //Administrar Horario      
+  app.get('/api/horario',(req,res)=> {
+    const query = `SELECT * FROM horario
+      JOIN docente ON horario.Codigo_Docente = docente.Id_Docente`;
+      const horarioList = db.query(query, (err,rows)=>{
+      if(err){
+        res.status(500).send(err)
+      }else{
+        res.status(200).send(rows)
+      }
+    })
+  })
 
-//ESTUDIANTES
+  //Insertar nuevo registro HORARIO
+app.post('/api/agregar-horario', async (req, res) => {
+  try {
+    const { Dia, Hora, Materia, Codigo_Grado, Jornada, Codigo_Docente} = req.body;
 
-// Ruta para obtener los estudiantes
-app.get('/api/administrar-estudiante', (req, res) => {
-  const query = `SELECT * FROM estudiante`;
-  const estudantesList = db.query(query, (err, rows) => {
-    if (err){ 
-    
-      res.status(500).send(err)
-    }else{
-      res.status(200).send(rows)
+    // Validación básica de los datos 
+    if (!Dia || !Hora || !Materia || !Codigo_Grado || !Jornada || !Codigo_Docente) {
+      return res.status(400).json({ message: 'Por favor, completa todos los campos.' });
     }
-  });
+
+    // Conexión a la base de datos
+    const connection = await mysql.createConnection(credentials);
+
+    // Consulta SQL para insertar la nota
+    const query = `INSERT INTO horario (Dia, Hora, Materia, Codigo_Grado, Jornada, Codigo_Docente) VALUES (?, ?, ?, ?, ?, ?)`;
+    
+      const values = [Dia, Hora, Materia, Codigo_Grado, Jornada, Codigo_Docente];
+
+    // Ejecutar la consulta
+    await connection.execute(query, values);
+
+    // Cerrar la conexión
+    connection.end();
+
+    res.status(201).json({ message: 'Registro agregado correctamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al agregar el horario' });
+  }
 });
 
+//Actualizar HORARIO
+  app.put('/api/actualizar-horario/:Codigo', (req, res) => {
+    const Codigo = req.params.Codigo;
+    const horarioActualizado = req.body;
+  
+    const {Dia, Hora, Materia, Codigo_Grado, Jornada, Codigo_Docente} = horarioActualizado;
+  
+    const sql = `UPDATE horario SET Dia = ?, Hora = ?, Materia = ?, Codigo_Grado = ?, Jornada = ?, Codigo_Docente = ? WHERE Codigo = ?`;
+    connection.query(sql, [Dia, Hora, Materia, Codigo_Grado, Jornada, Codigo_Docente, Codigo], (error, result) => {
+      if (err) {
+        console.error('Error al actualizar el docente:', error);
+        return res.status(500).json({ message: 'Error al actualizar el horario' });
+      }else{
+        res.status(200).send({"status":"success","message":"Horario Actualizado correctamente"})
+      }
+      res.json({ message: 'Horario actualizado correctamente' });
+    });
+  });
 
+ //Eliminar Registro HORARIO
+  app.post('/api/eliminar-horario',(req,res)=>{
+    const {Codigo} = req.body
+    var connection = mysql.createConnection(credentials)
+    db.query('DELETE FROM horario where Codigo = ?',Codigo,(err,result) =>{
+      if (err){
+        res.status(500).send(err)
+      }else{
+        res.status(200).send({"status":"success","message":"Registro Eliminado correctamente"})
+      }
+    })
+  })
+/////////////////////////////////////////////
 
 // ACUDIENTE
 
@@ -407,10 +466,32 @@ app.get('/api/administrar-estudiante', (req, res) => {
       //Consultar Notas
       app.get('/api/notas',(req,res)=> {
         const {cod_Acudiente} = req.query;
-        const query = `SELECT * FROM notas JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo JOIN acudiente ON acudiente.N_id = estudiante.Id_Acudiente WHERE estudiante.Id_Acudiente = ?`;
+        const query = `SELECT * FROM notas 
+        JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo 
+        JOIN acudiente ON estudiante.Id_Acudiente = acudiente.N_id 
+        JOIN periodos ON notas.Codigo_Periodos = periodos.Codigo 
+        WHERE acudiente.N_id = ?`;
           const notasList = db.query(query, [cod_Acudiente], (err,rows)=>{
           if(err){
             res.status(500).send(err) 
+          }else{
+            res.status(200).send(rows)
+          }
+        })
+      })
+
+      //Asistencia Perfil Acudientes
+      app.get('/api/asistencia-estudiante-acudiente',(req,res)=> {
+        const {cod_EstudianteA} = req.query;
+        const query = `SELECT * FROM asistencia 
+        JOIN estudiante ON asistencia.Codigo_Estudiante = estudiante.Codigo 
+        JOIN periodos ON asistencia.Periodo = periodos.Codigo 
+        JOIN docente ON docente.Id_Docente = asistencia.Codigo_Docente 
+        JOIN acudiente ON acudiente.N_id = estudiante.Id_Acudiente 
+        WHERE acudiente.N_id = ?`;
+          const asistenciaList = db.query(query, [cod_EstudianteA], (err,rows)=>{
+          if(err){
+            res.status(500).send(err)
           }else{
             res.status(200).send(rows)
           }
@@ -422,7 +503,9 @@ app.get('/api/administrar-estudiante', (req, res) => {
        //notas para perfil de ESTUDIANTE
        app.get('/api/notas-estudiante',(req,res)=> {
         const {cod_Estudiante} = req.query;
-        const query = `SELECT * FROM notas JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo WHERE estudiante.Id_Estudiante = ?`;
+        const query = `SELECT * FROM notas 
+        JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo 
+        WHERE estudiante.Id_Estudiante = ?`;
           const notasList = db.query(query, [cod_Estudiante], (err,rows)=>{
           if(err){
             res.status(500).send(err)
@@ -538,7 +621,7 @@ app.get('/api/administrar-estudiante', (req, res) => {
       //Horario Perfil Docente      
       app.get('/api/horario-docente',(req,res)=> {
         const {id_Docente} = req.query;
-        const query = `SELECT * FROM horariodocente JOIN docente ON horariodocente.Codigo_Docente = docente.Id_Docente WHERE docente.Id_Docente = ?`;
+        const query = `SELECT * FROM horario JOIN docente ON horario.Codigo_Docente = docente.Id_Docente WHERE docente.Id_Docente = ?`;
           const horarioList = db.query(query, [id_Docente], (err,rows)=>{
           if(err){
             res.status(500).send(err)
@@ -547,7 +630,7 @@ app.get('/api/administrar-estudiante', (req, res) => {
           }
         })
       })
-
+      
 
 app.get('/',inicio)
 /*app.get('/acudiente-estudiantes',estudiantexacudiente)*/
