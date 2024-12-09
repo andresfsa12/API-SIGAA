@@ -142,6 +142,7 @@ async function loginDocente(req, res) { //req = request = petición; res = respo
                 res.status(401).json({error: 'Datos incorrectos'})
               };  
       };
+//ROLES
 
 // ADMINISTRATIVO
 
@@ -353,7 +354,7 @@ app.post('/api/agregar-docente', async (req, res) => {
     })
   })
 
-  //Administrar Horario      
+  //Administrar HORARIO     
   app.get('/api/horario',(req,res)=> {
     const query = `SELECT * FROM horario
       JOIN docente ON horario.Codigo_Docente = docente.Id_Docente`;
@@ -631,6 +632,84 @@ app.post('/api/agregar-horario', async (req, res) => {
         })
       })
       
+      //Asistencia
+      //Consultar Asistencia
+      app.get('/api/asistencia-id-docente',(req,res)=> {
+        const {id_docente} = req.query;
+        const query = `SELECT * FROM asistencia 
+        JOIN estudiante ON asistencia.Codigo_Estudiante = estudiante.Codigo 
+        JOIN docente ON asistencia.Codigo_Docente = docente.Id_Docente 
+        WHERE docente.Id_Docente = ?`;
+          const asistenciaList = db.query(query, [id_docente], (err,rows)=>{
+          if(err){
+            res.status(500).send(err)
+          }else{
+            res.status(200).send(rows)
+          }
+        })
+      })
+      
+      //Eliminar ASISTENCIA perfil docente
+      app.post('/api/eliminar-asistencia',(req,res)=>{
+        const {Codigo_Asistencia} = req.body
+        var connection = mysql.createConnection(credentials)
+        db.query('DELETE FROM asistencia WHERE Codigo_Asistencia = ?',Codigo_Asistencia,(err,result) =>{
+          if (err){
+            res.status(500).send(err)
+          }else{
+            res.status(200).send({"status":"success","message":"Registro Eliminado correctamente"})
+          }
+        })
+      })
+
+      //Actualizar ASISTENCIA perfil docente
+      app.put('/api/actualizar-asistencia/:Codigo_Asistencia', (req, res) => {
+        const Codigo_Asistencia = req.params.Codigo_Asistencia;
+        const updatedAsistencia = req.body;
+      
+        const { Fecha, Materia } = updatedAsistencia;
+      
+        const sql = `UPDATE asistencia SET Fecha = ?, Materia = ? WHERE Codigo_Asistencia = ?`;
+        connection.query(sql, [Fecha, Materia, Codigo_Asistencia], (err, result) => {
+          if (err) {
+            console.error('Error al actualizar el resgistro:', err);
+            res.status(500).json({ error: 'Error al procesar la solicitud' });
+            return;
+          }
+      
+          res.json({ message: 'Asistencia actualizada correctamente' });
+        });
+      });
+      
+      // Agregar una nuevo registro en ASISTENCIA
+        app.post('/api/agregar-asistencia', async (req, res) => {
+          try {
+            const { Fecha, Codigo_Estudiante, Materia, Periodo,Codigo_Docente } = req.body;
+
+            // Validación básica de los datos 
+            if (!Fecha || !Codigo_Estudiante || !Materia || !Periodo || !Codigo_Docente) {
+              return res.status(400).json({ message: 'Por favor, completa todos los campos.' });
+            }
+
+            // Conexión a la base de datos
+            const connection = await mysql.createConnection(credentials);
+
+            // Consulta SQL para insertar la nota
+            const query = `INSERT INTO asistencia (Fecha, Codigo_Estudiante, Materia, Periodo, Codigo_Docente) VALUES (?, ?, ?, ?, ?)`;
+            const values = [Fecha, Codigo_Estudiante, Materia, Periodo,Codigo_Docente];
+
+            // Ejecutar la consulta
+            await connection.execute(query, values);
+
+            // Cerrar la conexión
+            connection.end();
+
+            res.status(201).json({ message: 'Asistencia agregada correctamente' });
+          } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: 'Error al agregar la Asistencia' });
+          }
+        });
 
 app.get('/',inicio)
 /*app.get('/acudiente-estudiantes',estudiantexacudiente)*/
