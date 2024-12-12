@@ -403,10 +403,10 @@ app.post('/api/agregar-horario', async (req, res) => {
     const Codigo = req.params.Codigo;
     const horarioActualizado = req.body;
   
-    const {Dia, Hora, Materia, Codigo_Grado, Jornada, Codigo_Docente} = horarioActualizado;
+    const {Dia, Hora, Materia, Codigo_Grado_H, Jornada, Codigo_Docente} = horarioActualizado;
   
-    const sql = `UPDATE horario SET Dia = ?, Hora = ?, Materia = ?, Codigo_Grado = ?, Jornada = ?, Codigo_Docente = ? WHERE Codigo = ?`;
-    connection.query(sql, [Dia, Hora, Materia, Codigo_Grado, Jornada, Codigo_Docente, Codigo], (error, result) => {
+    const sql = `UPDATE horario SET Dia = ?, Hora = ?, Materia = ?, Codigo_Grado_h = ?, Jornada = ?, Codigo_Docente = ? WHERE Codigo = ?`;
+    connection.query(sql, [Dia, Hora, Materia, Codigo_Grado_H, Jornada, Codigo_Docente, Codigo], (error, result) => {
       if (err) {
         console.error('Error al actualizar el docente:', error);
         return res.status(500).json({ message: 'Error al actualizar el horario' });
@@ -519,7 +519,11 @@ app.post('/api/agregar-horario', async (req, res) => {
       //Asistencia Perfil Estudiantes
       app.get('/api/asistencia-estudiante',(req,res)=> {
         const {cod_Estudiante} = req.query;
-        const query = `SELECT * FROM asistencia JOIN estudiante ON asistencia.Codigo_Estudiante = estudiante.Codigo JOIN periodos ON asistencia.Periodo = periodos.Codigo JOIN docente ON docente.Id_Docente = asistencia.Codigo_Docente WHERE estudiante.Id_Estudiante = ?`;
+        const query = `SELECT * FROM asistencia 
+        JOIN estudiante ON asistencia.Codigo_Estudiante = estudiante.Codigo 
+        JOIN periodos ON asistencia.Periodo = periodos.Codigo 
+        JOIN docente ON docente.Id_Docente = asistencia.Codigo_Docente 
+        WHERE estudiante.Id_Estudiante = ?`;
           const asistenciaList = db.query(query, [cod_Estudiante], (err,rows)=>{
           if(err){
             res.status(500).send(err)
@@ -547,7 +551,7 @@ app.post('/api/agregar-horario', async (req, res) => {
       //Consultar Notas
       app.get('/api/notas-docente',(req,res)=> {
         const {id_docente} = req.query;
-        const query = `SELECT * FROM notas JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo JOIN docente ON notas.Codigo_Docente = docente.Id_Docente WHERE docente.Id_Docente = ?`;
+        const query = `SELECT * FROM notas JOIN estudiante ON notas.Codigo_Estudiante = estudiante.Codigo JOIN docente ON notas.Codigo_Docente = docente.Id_Docente WHERE docente.Id_Docente = ? ` ;
           const notasList = db.query(query, [id_docente], (err,rows)=>{
           if(err){
             res.status(500).send(err)
@@ -710,6 +714,36 @@ app.post('/api/agregar-horario', async (req, res) => {
             res.status(500).json({ message: 'Error al agregar la Asistencia' });
           }
         });
+
+  //Obtener MATERIAS
+  app.get('/api/materias',(req,res)=> {
+    const {id_docente} = req.query;
+    const query = `SELECT Nombre FROM materia 
+    JOIN horario ON materia.Nombre = horario.Materia
+    WHERE horario.Codigo_Docente = ? ` ;
+      const setMateriasList = db.query(query, [id_docente], (err,rows)=>{
+      if(err){
+        res.status(500).send(err)
+      }else{
+        res.status(200).send(rows)
+      }
+    })
+  })
+ //Obtener GRADO segun id docente
+ app.get('/api/grado',(req,res)=> {
+  const {id_docente} = req.query;
+  const query = `SELECT Codigo_Grado FROM grado 
+  JOIN horario ON grado.Codigo_Grado = horario.Codigo_Grado_H
+  WHERE horario.Codigo_Docente = ? ` ;
+    const setGradoList = db.query(query, [id_docente], (err,rows)=>{
+    if(err){
+      res.status(500).send(err)
+    }else{
+      res.status(200).send(rows)
+    }
+  })
+})
+
 
 app.get('/',inicio)
 /*app.get('/acudiente-estudiantes',estudiantexacudiente)*/
