@@ -172,11 +172,11 @@ app.post('/api/agregar-estudiante', async (req, res) => {
       Genero,
       Direccion,
       Clave,
-      Codigo_Grado,
+      Codigo_Grado_E,
       Id_Acudiente } = req.body;
 
     // Validación básica de los datos 
-    if (!Tipo_Id || !Id_Estudiante || !Nombre || !Apellido || !fecha_nacimiento || !Genero || !Direccion || !Clave || !Codigo_Grado || !Id_Acudiente) {
+    if (!Tipo_Id || !Id_Estudiante || !Nombre || !Apellido || !fecha_nacimiento || !Genero || !Direccion || !Clave || !Codigo_Grado_E || !Id_Acudiente) {
       return res.status(400).json({ message: 'Por favor, completa todos los campos.' });
     }
 
@@ -192,7 +192,7 @@ app.post('/api/agregar-estudiante', async (req, res) => {
       Genero,
       Direccion,
       Clave,
-      Codigo_Grado,
+      Codigo_Grado_E,
       Id_Acudiente) VALUES (?, ?, ?, ?, ?,?,?,?,?,?)`;
     
       const values = [Tipo_Id,
@@ -203,7 +203,7 @@ app.post('/api/agregar-estudiante', async (req, res) => {
       Genero,
       Direccion,
       Clave,
-      Codigo_Grado,
+      Codigo_Grado_E,
       Id_Acudiente];
 
     // Ejecutar la consulta
@@ -261,9 +261,9 @@ app.post('/api/agregar-estudiante', async (req, res) => {
     const Codigo = req.params.Codigo;
     const estudianteActualizado = req.body;
   
-    const { Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado } = estudianteActualizado;
+    const { Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado_E } = estudianteActualizado;
   
-    const sql = `UPDATE estudiante SET Tipo_Id = ?, Id_Estudiante = ?, Nombre = ?, Apellido = ?, fecha_nacimiento = ?, Genero = ?, Direccion = ?, Clave = ?, Codigo_Grado = ? WHERE Codigo = ?`;
+    const sql = `UPDATE estudiante SET Tipo_Id = ?, Id_Estudiante = ?, Nombre = ?, Apellido = ?, fecha_nacimiento = ?, Genero = ?, Direccion = ?, Clave = ?, Codigo_Grado_E = ? WHERE Codigo = ?`;
     connection.query(sql, [Tipo_Id, Id_Estudiante, Nombre, Apellido, fecha_nacimiento, Genero, Direccion, Clave, Codigo_Grado, Codigo], (error, result) => {
       if (err) {
         console.error('Error al actualizar el estudiante:', error);
@@ -370,10 +370,10 @@ app.post('/api/agregar-docente', async (req, res) => {
   //Insertar nuevo registro HORARIO
 app.post('/api/agregar-horario', async (req, res) => {
   try {
-    const { Dia, Hora, Materia, Codigo_Grado, Jornada, Codigo_Docente} = req.body;
+    const { Dia, Hora, Materia, Codigo_Grado_H, Jornada, Codigo_Docente, Year} = req.body;
 
     // Validación básica de los datos 
-    if (!Dia || !Hora || !Materia || !Codigo_Grado || !Jornada || !Codigo_Docente) {
+    if (!Dia || !Hora || !Materia || !Codigo_Grado_H || !Jornada || !Codigo_Docente|| !Codigo_Docente|| !Year ) {
       return res.status(400).json({ message: 'Por favor, completa todos los campos.' });
     }
 
@@ -381,9 +381,9 @@ app.post('/api/agregar-horario', async (req, res) => {
     const connection = await mysql.createConnection(credentials);
 
     // Consulta SQL para insertar la nota
-    const query = `INSERT INTO horario (Dia, Hora, Materia, Codigo_Grado, Jornada, Codigo_Docente) VALUES (?, ?, ?, ?, ?, ?)`;
+    const query = `INSERT INTO horario (Dia, Hora, Materia, Codigo_Grado_H, Jornada, Codigo_Docente, Year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
     
-      const values = [Dia, Hora, Materia, Codigo_Grado, Jornada, Codigo_Docente];
+      const values = [Dia, Hora, Materia, Codigo_Grado_H, Jornada, Codigo_Docente, Year];
 
     // Ejecutar la consulta
     await connection.execute(query, values);
@@ -536,7 +536,13 @@ app.post('/api/agregar-horario', async (req, res) => {
       //Horario Perfil Estudiantes      
       app.get('/api/horario-estudiante',(req,res)=> {
         const {cod_Estudiante} = req.query;
-        const query = `SELECT * FROM horarioestudiante JOIN estudiante ON horarioestudiante.Codigo_Estudiante = estudiante.Codigo JOIN docente ON docente.Id_Docente = horarioestudiante.Codigo_Docente WHERE estudiante.Id_Estudiante = ?`;
+        const query = `SELECT *
+        FROM estudiante e
+        JOIN grado g ON e.Codigo_Grado_E = g.Codigo_Grado
+        JOIN horario h ON g.Codigo_Grado = h.Codigo_Grado_H
+        JOIN docente d ON h.Codigo_Docente = d.Id_Docente
+        WHERE e.Id_Estudiante = ?
+        Order by h.Dia`;
           const horarioList = db.query(query, [cod_Estudiante], (err,rows)=>{
           if(err){
             res.status(500).send(err)
