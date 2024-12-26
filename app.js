@@ -275,52 +275,52 @@ app.post('/api/agregar-estudiante', async (req, res) => {
     });
   });
 
-  //Administrar DOCENTE
+//Administrar DOCENTE
 
   // Ruta para obtener los DOCENTES
-app.get('/api/administrar-docente', (req, res) => {
-  const query = `SELECT * FROM docente`;
-  const docenteList = db.query(query, (err, rows) => {
-    if (err){ 
-    
-      res.status(500).send(err)
-    }else{
-      res.status(200).send(rows)
-    }
+  app.get('/api/administrar-docente', (req, res) => {
+    const query = `SELECT * FROM docente`;
+    const docenteList = db.query(query, (err, rows) => {
+      if (err){ 
+      
+        res.status(500).send(err)
+      }else{
+        res.status(200).send(rows)
+      }
+    });
   });
-});
 
   //Insertar nuevo DOCENTE
-app.post('/api/agregar-docente', async (req, res) => {
-  try {
-    const { 
-      Id_Docente, Nombre_Docente, fecha_nacimiento, Genero, Nivel_Academico, Direccion, Ciudad, Celular, Clave } = req.body;
+  app.post('/api/agregar-docente', async (req, res) => {
+    try {
+      const { 
+        Id_Docente, Nombre_Docente, fecha_nacimiento, Genero, Nivel_Academico, Direccion, Ciudad, Celular, Clave } = req.body;
 
-    // Validación básica de los datos 
-    if (!Id_Docente ||!Nombre_Docente || !fecha_nacimiento || !Genero || !Nivel_Academico || !Direccion || !Ciudad || !Celular || !Clave) {
-      return res.status(400).json({ message: 'Por favor, completa todos los campos.' });
+      // Validación básica de los datos 
+      if (!Id_Docente ||!Nombre_Docente || !fecha_nacimiento || !Genero || !Nivel_Academico || !Direccion || !Ciudad || !Celular || !Clave) {
+        return res.status(400).json({ message: 'Por favor, completa todos los campos.' });
+      }
+
+      // Conexión a la base de datos
+      const connection = await mysql.createConnection(credentials);
+
+      // Consulta SQL para insertar la nota
+      const query = `INSERT INTO docente (Id_Docente, Nombre_Docente, fecha_nacimiento, Genero, Nivel_Academico, Direccion, Ciudad, Celular, Clave) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      
+        const values = [Id_Docente, Nombre_Docente, fecha_nacimiento, Genero, Nivel_Academico, Direccion, Ciudad, Celular, Clave];
+
+      // Ejecutar la consulta
+      await connection.execute(query, values);
+
+      // Cerrar la conexión
+      connection.end();
+
+      res.status(201).json({ message: 'Docente agregado correctamente' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error al agregar el docente' });
     }
-
-    // Conexión a la base de datos
-    const connection = await mysql.createConnection(credentials);
-
-    // Consulta SQL para insertar la nota
-    const query = `INSERT INTO docente (Id_Docente, Nombre_Docente, fecha_nacimiento, Genero, Nivel_Academico, Direccion, Ciudad, Celular, Clave) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    
-      const values = [Id_Docente, Nombre_Docente, fecha_nacimiento, Genero, Nivel_Academico, Direccion, Ciudad, Celular, Clave];
-
-    // Ejecutar la consulta
-    await connection.execute(query, values);
-
-    // Cerrar la conexión
-    connection.end();
-
-    res.status(201).json({ message: 'Docente agregado correctamente' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al agregar el docente' });
-  }
-});
+  });
 
 //Actualizar DOCENTE
   app.put('/api/actualizar-docente/:Id_Docente', (req, res) => {
@@ -426,6 +426,23 @@ app.post('/api/agregar-horario', async (req, res) => {
         res.status(500).send(err)
       }else{
         res.status(200).send({"status":"success","message":"Registro Eliminado correctamente"})
+      }
+    })
+  })
+
+  //Consultar Notas
+  app.get('/api/notas-general',(req,res)=> {
+    const query = `SELECT *, AVG(nota) OVER (PARTITION BY Materia, Codigo_Estudiante) AS Promedio_Nota
+FROM notas n
+JOIN estudiante ON n.Codigo_Estudiante = estudiante.Codigo 
+JOIN docente ON n.Codigo_Docente = docente.Id_Docente
+JOIN periodos ON n.Codigo_Periodos = periodos.Codigo
+ORDER BY Materia, Promedio_Nota DESC` ;
+      const notasList = db.query(query, (err,rows)=>{
+      if(err){
+        res.status(500).send(err)
+      }else{
+        res.status(200).send(rows)
       }
     })
   })
@@ -613,7 +630,7 @@ app.post('/api/agregar-horario', async (req, res) => {
             const connection = await mysql.createConnection(credentials);
 
             // Consulta SQL para insertar la nota
-            const query = `INSERT INTO notas (Codigo_Estudiante, Materia, Codigo_Periodos, nota, Codigo_Docente) VALUES (?, ?, ?, ?, ?)`;
+            const query = `INSERT INTO notas (Codigo_Estudiante, Materia, Codigo_Periodos, nota, Grado, Codigo_Docente) VALUES (?, ?, ?, ?, ?, ?)`;
             const values = [Codigo_Estudiante, Materia, Codigo_Periodos, nota, Grado, Codigo_Docente];
 
             // Ejecutar la consulta
@@ -721,34 +738,34 @@ app.post('/api/agregar-horario', async (req, res) => {
           }
         });
 
-  //Obtener MATERIAS
-  app.get('/api/materias',(req,res)=> {
-    const {id_docente} = req.query;
-    const query = `SELECT Nombre FROM materia 
-    JOIN horario ON materia.Nombre = horario.Materia
-    WHERE horario.Codigo_Docente = ? ` ;
-      const setMateriasList = db.query(query, [id_docente], (err,rows)=>{
-      if(err){
-        res.status(500).send(err)
-      }else{
-        res.status(200).send(rows)
-      }
-    })
-  })
- //Obtener GRADO segun id docente
- app.get('/api/grado',(req,res)=> {
-  const {id_docente} = req.query;
-  const query = `SELECT Codigo_Grado FROM grado 
-  JOIN horario ON grado.Codigo_Grado = horario.Codigo_Grado_H
-  WHERE horario.Codigo_Docente = ? ` ;
-    const setGradoList = db.query(query, [id_docente], (err,rows)=>{
-    if(err){
-      res.status(500).send(err)
-    }else{
-      res.status(200).send(rows)
-    }
-  })
-})
+      //Obtener MATERIAS
+      app.get('/api/materias',(req,res)=> {
+        const {id_docente} = req.query;
+        const query = `SELECT Nombre FROM materia 
+        JOIN horario ON materia.Nombre = horario.Materia
+        WHERE horario.Codigo_Docente = ? ` ;
+          const setMateriasList = db.query(query, [id_docente], (err,rows)=>{
+          if(err){
+            res.status(500).send(err)
+          }else{
+            res.status(200).send(rows)
+          }
+        })
+      })
+      //Obtener GRADO segun id docente
+      app.get('/api/grado',(req,res)=> {
+        const {id_docente} = req.query;
+        const query = `SELECT Codigo_Grado FROM grado 
+        JOIN horario ON grado.Codigo_Grado = horario.Codigo_Grado_H
+        WHERE horario.Codigo_Docente = ? ` ;
+          const setGradoList = db.query(query, [id_docente], (err,rows)=>{
+          if(err){
+            res.status(500).send(err)
+          }else{
+            res.status(200).send(rows)
+          }
+        })
+      })
 
 
 app.get('/',inicio)
